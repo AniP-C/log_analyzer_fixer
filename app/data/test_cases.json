@@ -1,0 +1,62 @@
+[
+  {
+    "input": "Order 123 stuck in processing",
+    "expected_issue_type": "workflow_stuck",
+    "expected_action": "retry_workflow"
+  },
+  {
+    "input": "Workflow waiting too long for order 456",
+    "expected_issue_type": "workflow_stuck",
+    "expected_action": "retry_workflow"
+  },
+  {
+    "input": "Order 777 hung in queued status",
+    "expected_issue_type": "workflow_stuck",
+    "expected_action": "retry_workflow"
+  },
+  {
+    "input": "File failed due to invalid character in billing address for order 789",
+    "expected_issue_type": "data_issue_invalid_chars",
+    "expected_action": "remove_and_reprocess"
+  },
+  {
+    "input": "Bad character found in address field for order 999",
+    "expected_issue_type": "data_issue_invalid_chars",
+    "expected_action": "remove_and_reprocess"
+  },
+  {
+    "input": "Malformed input with unsupported character caused parse error for order 212",
+    "expected_issue_type": "data_issue_invalid_chars",
+    "expected_action": "remove_and_reprocess"
+  },
+  {
+    "input": "File failed while processing batch 321",
+    "expected_issue_type": "file_processing_failure",
+    "expected_action": "isolate_and_rerun_batch"
+  },
+  {
+    "input": "Workflow execution failed for order 654",
+    "expected_issue_type": "file_processing_failure",
+    "expected_action": "isolate_and_rerun_batch"
+  },
+  {
+    "input": "Processing failure detected in batch 852 for downstream orders",
+    "expected_issue_type": "file_processing_failure",
+    "expected_action": "isolate_and_rerun_batch"
+  },
+  {
+    "input": "Order 104 is still processing after multiple retries",
+    "expected_issue_type": "workflow_stuck",
+    "expected_action": "retry_workflow"
+  },
+  {
+    "input": "Invalid chars broke the customer billing record in file 108",
+    "expected_issue_type": "data_issue_invalid_chars",
+    "expected_action": "remove_and_reprocess"
+  },
+  {
+    "input": "Batch 901 job failed and needs selective rerun",
+    "expected_issue_type": "file_processing_failure",
+    "expected_action": "isolate_and_rerun_batch"
+  }
+]

@@ -1,0 +1,5 @@
+- Use modular Python architecture
+- Separate reasoning, execution, and API layers
+- Always return structured JSON
+- Avoid hardcoding logic, prefer LLM reasoning
+- Use environment variables for configs

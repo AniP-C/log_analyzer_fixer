@@ -1,0 +1,44 @@
+[
+  {
+    "issue": "workflow_stuck",
+    "pattern": "order stuck",
+    "keywords": ["stuck", "processing", "queued"],
+    "fix": "retry_workflow",
+    "success_rate": 0.92
+  },
+  {
+    "issue": "workflow_stuck",
+    "pattern": "workflow waiting",
+    "keywords": ["waiting", "step failed", "hung"],
+    "fix": "retry_workflow",
+    "success_rate": 0.89
+  },
+  {
+    "issue": "data_issue_invalid_chars",
+    "pattern": "invalid character",
+    "keywords": ["billing address", "invalid chars", "unsupported character"],
+    "fix": "remove_and_reprocess",
+    "success_rate": 0.9
+  },
+  {
+    "issue": "data_issue_invalid_chars",
+    "pattern": "bad character",
+    "keywords": ["unicode", "parse error", "malformed"],
+    "fix": "remove_and_reprocess",
+    "success_rate": 0.87
+  },
+  {
+    "issue": "file_processing_failure",
+    "pattern": "file failed",
+    "keywords": ["batch failed", "processing failure", "job failed"],
+    "fix": "isolate_and_rerun_batch",
+    "success_rate": 0.84
+  },
+  {
+    "issue": "file_processing_failure",
+    "pattern": "workflow execution failed",
+    "keywords": ["failed for order", "rerun", "batch"],
+    "fix": "isolate_and_rerun_batch",
+    "success_rate": 0.81
+  }
+]
