@@ -2,43 +2,113 @@
   {
     "issue": "workflow_stuck",
     "pattern": "order stuck",
-    "keywords": ["stuck", "processing", "queued"],
+    "keywords": [
+      "stuck",
+      "processing",
+      "queued"
+    ],
     "fix": "retry_workflow",
     "success_rate": 0.92
   },
   {
     "issue": "workflow_stuck",
     "pattern": "workflow waiting",
-    "keywords": ["waiting", "step failed", "hung"],
+    "keywords": [
+      "waiting",
+      "step failed",
+      "hung"
+    ],
     "fix": "retry_workflow",
     "success_rate": 0.89
   },
   {
     "issue": "data_issue_invalid_chars",
     "pattern": "invalid character",
-    "keywords": ["billing address", "invalid chars", "unsupported character"],
+    "keywords": [
+      "billing address",
+      "invalid chars",
+      "unsupported character"
+    ],
     "fix": "remove_and_reprocess",
     "success_rate": 0.9
   },
   {
     "issue": "data_issue_invalid_chars",
     "pattern": "bad character",
-    "keywords": ["unicode", "parse error", "malformed"],
+    "keywords": [
+      "unicode",
+      "parse error",
+      "malformed"
+    ],
     "fix": "remove_and_reprocess",
     "success_rate": 0.87
   },
   {
     "issue": "file_processing_failure",
     "pattern": "file failed",
-    "keywords": ["batch failed", "processing failure", "job failed"],
+    "keywords": [
+      "batch failed",
+      "processing failure",
+      "job failed"
+    ],
     "fix": "isolate_and_rerun_batch",
     "success_rate": 0.84
   },
   {
     "issue": "file_processing_failure",
     "pattern": "workflow execution failed",
-    "keywords": ["failed for order", "rerun", "batch"],
+    "keywords": [
+      "failed for order",
+      "rerun",
+      "batch"
+    ],
     "fix": "isolate_and_rerun_batch",
     "success_rate": 0.81
+  },
+  {
+    "issue": "bulk_orders_created",
+    "pattern": "many orders stuck in",
+    "keywords": [
+      "created",
+      "stuck"
+    ],
+    "fix": "retry_workflow",
+    "success_rate": 1.0,
+    "learned": true
+  },
+  {
+    "issue": "workflow_failure",
+    "pattern": "workflow failed due to",
+    "keywords": [
+      "timeout"
+    ],
+    "fix": "retry_workflow",
+    "success_rate": 1.0,
+    "learned": true
+  },
+  {
+    "issue": "faulty_order_paypal",
+    "pattern": "file batch 77 failed:",
+    "keywords": [
+      "paypal",
+      "billing address",
+      "batch",
+      "file"
+    ],
+    "fix": "remove_and_reprocess",
+    "success_rate": 1.0,
+    "learned": true
+  },
+  {
+    "issue": "delayed_batch_export",
+    "pattern": "batch export delayed on",
+    "keywords": [
+      "delayed",
+      "batch",
+      "spike"
+    ],
+    "fix": "no_action",
+    "success_rate": 0.0,
+    "learned": true
   }
 ]
