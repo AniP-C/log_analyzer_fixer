@@ -5,15 +5,28 @@ from typing import Any
 
 from app.models.schemas import Impact, ReasoningResult
 from app.utils.llm_utils import llm_reason_about_issue
+from app.utils.logger import log_flow_trace
 
 
 class ReasoningEngine:
     def reason(self, raw_input: str, issue_type: str, similar_cases: list[dict[str, Any]]) -> ReasoningResult:
         normalized = raw_input.lower()
+        log_flow_trace(
+            "reasoning",
+            "app.core.reasoning.ReasoningEngine.reason",
+            "reason_begin",
+            {"issue_type": issue_type, "similar_cases_count": len(similar_cases)},
+        )
 
         # --- Mandatory scenario logic (deterministic, fast, and safe) ---
         # 1) Bulk Orders stuck in CREATED: detect spike/bulk, correlate, retry if safe.
         if ("created" in normalized) and any(k in normalized for k in ("many", "bulk", "spike")):
+            log_flow_trace(
+                "reasoning",
+                "app.core.reasoning.ReasoningEngine.reason",
+                "heuristic_branch",
+                {"branch": "bulk_orders_created", "source": "deterministic_rules"},
+            )
             impact = Impact(orders_affected=_extract_count(normalized) or 25, scope="batch", notes="Bulk spike indicated.")
             return ReasoningResult(
                 decision="retry_workflow",
@@ -37,6 +50,12 @@ class ReasoningEngine:
 
         # 2) Workflow Failure (Upstream vs Downstream): retry downstream; escalate upstream.
         if any(k in normalized for k in ("timeout", "timed out", "dependency failure", "service unavailable", "502", "503", "504")):
+            log_flow_trace(
+                "reasoning",
+                "app.core.reasoning.ReasoningEngine.reason",
+                "heuristic_branch",
+                {"branch": "downstream_transient", "source": "deterministic_rules"},
+            )
             impact = Impact(orders_affected=_extract_count(normalized) or 1, scope=_scope(normalized))
             return ReasoningResult(
                 decision="retry_workflow",
@@ -55,6 +74,12 @@ class ReasoningEngine:
             )
 
         if any(k in normalized for k in ("validation", "invalid", "bad data", "schema", "missing required", "cannot parse")):
+            log_flow_trace(
+                "reasoning",
+                "app.core.reasoning.ReasoningEngine.reason",
+                "heuristic_branch",
+                {"branch": "upstream_validation", "source": "deterministic_rules"},
+            )
             impact = Impact(orders_affected=_extract_count(normalized) or 1, scope=_scope(normalized))
             return ReasoningResult(
                 decision="escalate",
@@ -74,6 +99,12 @@ class ReasoningEngine:
 
         # 3) Faulty Order in File (PayPal case): missing billing address when paid via PayPal.
         if ("paypal" in normalized) and any(k in normalized for k in ("missing billing address", "billing address missing", "no billing address")):
+            log_flow_trace(
+                "reasoning",
+                "app.core.reasoning.ReasoningEngine.reason",
+                "heuristic_branch",
+                {"branch": "paypal_missing_billing", "source": "deterministic_rules"},
+            )
             impact = Impact(orders_affected=1, scope="batch", notes="Single faulty record blocks batch/file processing.")
             return ReasoningResult(
                 decision="remove_and_reprocess",
@@ -97,6 +128,12 @@ class ReasoningEngine:
 
         # 4) Delayed Batch Export (False Alert): previous run delayed, next run spike (2 batches combined).
         if any(k in normalized for k in ("delayed", "delay", "late")) and any(k in normalized for k in ("next run", "combined", "two batches", "double batch", "spike")):
+            log_flow_trace(
+                "reasoning",
+                "app.core.reasoning.ReasoningEngine.reason",
+                "heuristic_branch",
+                {"branch": "delayed_batch_false_alert", "source": "deterministic_rules"},
+            )
             impact = Impact(orders_affected=_extract_count(normalized) or 0, scope="batch", notes="Likely combined batches due to prior delay.")
             return ReasoningResult(
                 decision="no_action",
@@ -118,14 +155,43 @@ class ReasoningEngine:
             )
 
         # --- Grok reasoning (optional): enrich decision when not matched above ---
+        log_flow_trace(
+            "reasoning",
+            "app.core.reasoning.ReasoningEngine.reason",
+            "grok_reasoning_attempt",
+            {"reason": "no_heuristic_match", "issue_type": issue_type},
+        )
         llm_result = llm_reason_about_issue(raw_input, issue_type, similar_cases)
         if llm_result:
+            log_flow_trace(
+                "reasoning",
+                "app.core.reasoning.ReasoningEngine.reason",
+                "grok_reasoning_accepted",
+                {
+                    "decision": llm_result.get("decision"),
+                    "confidence": llm_result.get("confidence"),
+                    "severity": llm_result.get("severity"),
+                },
+            )
             return ReasoningResult(**llm_result)
+
+        log_flow_trace(
+            "reasoning",
+            "app.core.reasoning.ReasoningEngine.reason",
+            "fallback_issue_type_rules",
+            {"reason": "grok_unavailable_or_failed", "issue_type": issue_type},
+        )
 
         top_case = similar_cases[0] if similar_cases else {}
         suggested_fix = top_case.get("fix", "manual_check")
 
         if issue_type == "workflow_stuck":
+            log_flow_trace(
+                "reasoning",
+                "app.core.reasoning.ReasoningEngine.reason",
+                "fallback_branch",
+                {"branch": "workflow_stuck_defaults"},
+            )
             return ReasoningResult(
                 decision="retry_workflow",
                 root_cause="Order-processing workflow appears blocked at an intermediate step.",
@@ -141,6 +207,12 @@ class ReasoningEngine:
             )
 
         if issue_type == "data_issue_invalid_chars":
+            log_flow_trace(
+                "reasoning",
+                "app.core.reasoning.ReasoningEngine.reason",
+                "fallback_branch",
+                {"branch": "data_issue_invalid_chars_defaults"},
+            )
             return ReasoningResult(
                 decision="remove_and_reprocess",
                 root_cause="Malformed billing or file data contains unsupported characters that break validation.",
@@ -156,6 +228,12 @@ class ReasoningEngine:
             )
 
         if issue_type == "file_processing_failure":
+            log_flow_trace(
+                "reasoning",
+                "app.core.reasoning.ReasoningEngine.reason",
+                "fallback_branch",
+                {"branch": "file_processing_failure_defaults"},
+            )
             return ReasoningResult(
                 decision="isolate_and_rerun_batch",
                 root_cause="Batch or file handling failed while processing one or more orders.",
@@ -172,6 +250,12 @@ class ReasoningEngine:
                 common_root_cause="batch_processing_failure",
             )
 
+        log_flow_trace(
+            "reasoning",
+            "app.core.reasoning.ReasoningEngine.reason",
+            "fallback_branch",
+            {"branch": "insufficient_signal_escalate"},
+        )
         return ReasoningResult(
             decision="escalate" if suggested_fix == "manual_check" else "escalate",
             root_cause="Insufficient signal for a precise diagnosis.",

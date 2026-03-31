@@ -110,5 +110,39 @@
     "fix": "no_action",
     "success_rate": 0.0,
     "learned": true
+  },
+  {
+    "issue": "workflow_failure",
+    "pattern": "workflow failed due to",
+    "keywords": [
+      "timeout"
+    ],
+    "fix": "retry_workflow",
+    "success_rate": 1.0,
+    "learned": true
+  },
+  {
+    "issue": "bulk_orders_created",
+    "pattern": "many orders stuck in",
+    "keywords": [
+      "created",
+      "stuck"
+    ],
+    "fix": "retry_workflow",
+    "success_rate": 1.0,
+    "learned": true
+  },
+  {
+    "issue": "faulty_order_paypal",
+    "pattern": "file batch 77 failed:",
+    "keywords": [
+      "paypal",
+      "billing address",
+      "batch",
+      "file"
+    ],
+    "fix": "remove_and_reprocess",
+    "success_rate": 1.0,
+    "learned": true
   }
 ]

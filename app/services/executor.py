@@ -3,17 +3,32 @@ from __future__ import annotations
 import random
 import re
 
+from app.utils.logger import log_flow_trace
+
 
 class ActionExecutor:
     def execute(self, recovery_plan: list[str], raw_input: str, issue_type: str, decision: str) -> dict:
         target = self._extract_target(raw_input)
         plan = recovery_plan or ([decision] if decision not in ("no_action", "escalate") else [])
 
+        log_flow_trace(
+            "executor",
+            "app.services.executor.ActionExecutor.execute",
+            "execute_begin",
+            {"decision": decision, "issue_type": issue_type, "target": target, "plan": plan},
+        )
+
         steps: list[dict] = []
         if decision in ("no_action", "escalate"):
             status = "skipped" if decision == "no_action" else "success"
             if decision == "escalate":
                 steps.append({"step": "escalate_to_oncall", "status": "success", "detail": f"Escalated incident for {target}."})
+            log_flow_trace(
+                "executor",
+                "app.services.executor.ActionExecutor.execute",
+                "execute_short_circuit",
+                {"decision": decision, "status": status, "steps": [s["step"] for s in steps]},
+            )
             return {
                 "decision": decision,
                 "target": target,
@@ -41,6 +56,13 @@ class ActionExecutor:
             exec_status = "failed"
         else:
             exec_status = "success"
+
+        log_flow_trace(
+            "executor",
+            "app.services.executor.ActionExecutor.execute",
+            "execute_end",
+            {"final_status": exec_status, "target": target, "steps_run": len(steps)},
+        )
 
         return {
             "decision": decision,

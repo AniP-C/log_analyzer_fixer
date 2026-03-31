@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     logs_dir: str = str(Path(__file__).resolve().parents[2] / "logs")
     app_log_file: str = str(Path(__file__).resolve().parents[2] / "logs" / "app.log")
     event_log_file: str = str(Path(__file__).resolve().parents[2] / "logs" / "agent_events.jsonl")
+    # One file: ordered step-by-step trace for a full analyze run (classification → RAG → reasoning/Grok → gates → execute → notify → learn).
+    flow_trace_file: str = str(Path(__file__).resolve().parents[2] / "logs" / "flow_trace.jsonl")
 
     model_config = SettingsConfigDict(
         env_file=".env",
