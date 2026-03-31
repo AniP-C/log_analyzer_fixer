@@ -2,15 +2,20 @@ from __future__ import annotations
 
 
 class Notifier:
-    def send(self, execution_result: dict, issue_type: str, confidence: float) -> dict:
-        channel = "email" if confidence >= 0.8 else "slack"
+    def send(self, *, severity: str, confidence: float, decision: str, execution_status: str, target: str, low_confidence_escalate: bool) -> dict:
+        if low_confidence_escalate:
+            channel = "escalate"
+        elif severity == "high":
+            channel = "slack+email"
+        elif severity == "medium":
+            channel = "email"
+        else:
+            channel = "none"
+
         message = (
-            f"FlowFix handled {issue_type} for {execution_result['target']} with action "
-            f"{execution_result['action']} ({execution_result['status']})."
+            f"FlowFix decision={decision} status={execution_status} severity={severity} "
+            f"confidence={confidence:.2f} target={target}"
         )
 
-        return {
-            "channel": channel,
-            "message": message,
-            "status": f"{channel}_sent",
-        }
+        status = "no_notification" if channel == "none" else f"{channel}_sent"
+        return {"channel": channel, "message": message, "status": status}

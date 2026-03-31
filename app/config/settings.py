@@ -8,8 +8,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     app_env: str = "development"
-    openai_api_key: str | None = None
-    openai_model: str = "gpt-4.1-mini"
+    # Grok (xAI) - reasoning only. Uses OpenAI-compatible client in llm_utils.py.
+    grok_api_key: str | None = None
+    grok_base_url: str = "https://api.x.ai/v1"
+    grok_model: str = "grok-3-mini"
+
     response_time_target_ms: float = 1500.0
     data_dir: str = str(Path(__file__).resolve().parents[1] / "data")
     logs_dir: str = str(Path(__file__).resolve().parents[2] / "logs")

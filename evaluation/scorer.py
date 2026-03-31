@@ -12,13 +12,13 @@ def score_benchmark(results: list[CaseResult], response_time_target_ms: float) -
     avg_response_time = sum(result.response_time_ms for result in results) / total if total else response_time_target_ms
     response_time_score = max(0.0, min(1.0, response_time_target_ms / max(avg_response_time, 1)))
 
-    overall_score = round(
+    weighted = (
         (detection_accuracy * 0.3)
         + (action_accuracy * 0.3)
         + (resolution_success * 0.2)
-        + (response_time_score * 0.2),
-        4,
+        + (response_time_score * 0.2)
     )
+    overall_score = int(round(max(0.0, min(1.0, weighted)) * 10_000))
 
     return BenchmarkSummary(
         total_cases=total,
