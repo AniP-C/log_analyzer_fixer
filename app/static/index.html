@@ -135,6 +135,46 @@
       line-height: 1.45;
     }
 
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .kv {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 8px 12px;
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.7);
+      margin-top: 14px;
+    }
+
+    .k {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .v {
+      font-weight: 600;
+    }
+
+    .bar {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(31, 41, 51, 0.12);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .bar > div {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(135deg, var(--accent-2), #22c55e);
+      transition: width 200ms ease;
+    }
+
     .sample {
       margin-top: 14px;
       color: var(--muted);
@@ -175,12 +215,32 @@
         <textarea id="input" placeholder="Order 123 stuck in processing"></textarea>
         <button id="analyzeBtn">Analyze Incident</button>
         <div class="status" id="status"></div>
-        <div class="sample">
-          Sample prompts:
+        <div class="kv" id="summary" style="display:none;">
+          <div class="k">Issue type</div><div class="v" id="sumIssueType">—</div>
+          <div class="k">Root cause</div><div class="v" id="sumRootCause">—</div>
+          <div class="k">Decision</div><div class="v" id="sumDecision">—</div>
+          <div class="k">Notification</div><div class="v" id="sumNotification">—</div>
+          <div class="k">Confidence</div>
           <div>
-            <button type="button" data-sample="Order 123 stuck in processing">Workflow stuck</button>
-            <button type="button" data-sample="File failed due to invalid character in billing address for order 789">Invalid chars</button>
-            <button type="button" data-sample="Workflow execution failed for order 456">File failure</button>
+            <div class="bar"><div id="confBar"></div></div>
+            <div class="k" id="confText" style="margin-top:6px;">—</div>
+          </div>
+        </div>
+        <div class="sample">
+          Scenario buttons:
+          <div>
+            <button type="button" data-sample="Many orders stuck in CREATED status">Orders stuck in CREATED</button>
+            <button type="button" data-sample="Workflow failed due to timeout contacting downstream dependency for order 456">Workflow failure</button>
+            <button type="button" data-sample="File batch 77 failed: PayPal order missing billing address">Faulty order in file</button>
+            <button type="button" data-sample="Batch export delayed on previous run; next run has spike because two batches combined">Batch delay issue</button>
+          </div>
+          <div style="margin-top:12px;">
+            Quick samples:
+            <div>
+              <button type="button" data-sample="Order 123 stuck in processing">Workflow stuck</button>
+              <button type="button" data-sample="File failed due to invalid character in billing address for order 789">Invalid chars</button>
+              <button type="button" data-sample="Workflow execution failed for order 456">File failure</button>
+            </div>
           </div>
         </div>
       </section>
@@ -197,12 +257,35 @@
     const output = document.getElementById("output");
     const status = document.getElementById("status");
     const analyzeBtn = document.getElementById("analyzeBtn");
+    const summary = document.getElementById("summary");
+    const sumIssueType = document.getElementById("sumIssueType");
+    const sumRootCause = document.getElementById("sumRootCause");
+    const sumDecision = document.getElementById("sumDecision");
+    const sumNotification = document.getElementById("sumNotification");
+    const confBar = document.getElementById("confBar");
+    const confText = document.getElementById("confText");
 
     document.querySelectorAll("[data-sample]").forEach((button) => {
       button.addEventListener("click", () => {
         input.value = button.getAttribute("data-sample");
       });
     });
+
+    function renderSummary(data) {
+      if (!data || typeof data !== "object") {
+        summary.style.display = "none";
+        return;
+      }
+      summary.style.display = "grid";
+      sumIssueType.textContent = data.issue_type ?? "—";
+      sumRootCause.textContent = data.root_cause ?? "—";
+      sumDecision.textContent = data.decision ?? "—";
+      sumNotification.textContent = data.notification ?? "—";
+      const conf = Number(data.confidence ?? 0);
+      const pct = Math.max(0, Math.min(100, Math.round(conf * 100)));
+      confBar.style.width = pct + "%";
+      confText.textContent = `${pct}% (${conf.toFixed(2)})`;
+    }
 
     analyzeBtn.addEventListener("click", async () => {
       const value = input.value.trim();
@@ -213,6 +296,7 @@
 
       status.textContent = "Analyzing incident...";
       output.textContent = "{\n  \"status\": \"running\"\n}";
+      summary.style.display = "none";
 
       try {
         const response = await fetch("/analyze", {
@@ -223,10 +307,12 @@
 
         const data = await response.json();
         output.textContent = JSON.stringify(data, null, 2);
+        renderSummary(data);
         status.textContent = response.ok ? "Analysis complete." : "Request failed.";
       } catch (error) {
         status.textContent = "Agent request failed.";
         output.textContent = JSON.stringify({ error: String(error) }, null, 2);
+        summary.style.display = "none";
       }
     });
   </script>
