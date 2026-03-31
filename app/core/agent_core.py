@@ -167,11 +167,11 @@ class FlowFixAgent:
                     expected_issue_type=case["expected_issue_type"],
                     expected_action=case["expected_action"],
                     actual_issue_type=result.issue_type,
-                    actual_action=result.action_taken,
+                    actual_action=result.decision,
                     confidence=result.confidence,
                     response_time_ms=result.response_time_ms,
                     passed_issue_type=result.issue_type == case["expected_issue_type"],
-                    passed_action=result.action_taken == case["expected_action"],
+                    passed_action=result.decision == case["expected_action"],
                     execution_status=result.execution_status,
                 )
             )
